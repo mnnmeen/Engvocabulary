@@ -78,3 +78,25 @@ async def list_words(page: int = 1, limit: int = 20):
         "total": total,
         "total_pages": total_pages,
     }
+
+
+@app.get("/stats")
+async def get_stats():
+    db = get_database()
+    collection = db["words"]
+
+    total_words = await collection.count_documents({})
+    pipeline = [
+        {
+            "$project": {
+                "collocations_count": {
+                    "$size": {"$ifNull": ["$collocations", []]}
+                }
+            }
+        },
+        {"$group": {"_id": None, "total": {"$sum": "$collocations_count"}}},
+    ]
+    agg_result = await collection.aggregate(pipeline).to_list(length=1)
+    total_collocations = agg_result[0]["total"] if agg_result else 0
+
+    return {"total_words": total_words, "total_collocations": total_collocations}

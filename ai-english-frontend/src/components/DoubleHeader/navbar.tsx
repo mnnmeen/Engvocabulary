@@ -11,7 +11,7 @@ import classes from './DoubleHeader.module.css';
 const mainLinks = [
   { link: '/', label: '首頁' },
   { link: '/all-words', label: '所有單字' },
-  { link: '#', label: '訓練' },
+  { link: '/training', label: '訓練' },
   { link: '#', label: '歷史' },
   { link: '#', label: '個人帳號' },
 ];
