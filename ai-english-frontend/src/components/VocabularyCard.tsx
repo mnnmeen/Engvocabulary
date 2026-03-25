@@ -6,13 +6,17 @@ type VocabularyCardProps = {
   proficiency?: number;
   importance?: number;
   memorize?: string | number | boolean;
-  posAndChinese?: { [pos: string]: string };
-  examples?: string[];
-  collocations?: {
-    phrase?: string;
-    meaning?: string;
-    example?: string;
+  senses?: {
+    pos?: string;
+    chinese?: string;
+    examples?: string[];
+    collocations?: {
+      phrase?: string;
+      phrase_chinese?: string;
+      phrase_example?: string;
+    }[];
   }[];
+  lastReviewDate?: string;
 };
 
 function getPosColorClasses(pos: string) {
@@ -51,13 +55,17 @@ export function VocabularyCard({
   proficiency,
   importance,
   memorize,
-  posAndChinese,
-  examples,
-  collocations,
+  senses,
+  lastReviewDate,
 }: VocabularyCardProps) {
   const importanceText = getImportanceLabel(importance);
   const memorizeText =
     memorize === undefined || memorize === null ? undefined : String(memorize);
+  const safeSenses = Array.isArray(senses) ? senses : [];
+  const totalCollocations = safeSenses.reduce(
+    (sum, sense) => sum + (sense.collocations?.length ?? 0),
+    0,
+  );
 
   return (
     <div className="w-full max-w-4xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900">
@@ -72,16 +80,18 @@ export function VocabularyCard({
             </div>
           </div>
 
-          {posAndChinese && (
+          {safeSenses.length > 0 && (
             <div className="rounded-xl border border-zinc-100 bg-white px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/40">
               <div className="mb-2 text-xs font-medium uppercase text-zinc-400">
                 詞性與中文
               </div>
               <div className="space-y-2 text-sm text-zinc-900 dark:text-zinc-100">
-                {Object.entries(posAndChinese).map(([pos, meaning]) => {
+                {safeSenses.map((sense, idx) => {
+                  const pos = sense.pos ?? "other";
+                  const meaning = sense.chinese ?? "";
                   const colorClasses = getPosColorClasses(pos);
                   return (
-                    <div key={pos} className="flex items-start gap-3">
+                    <div key={`${pos}-${idx}`} className="flex items-start gap-3">
                       <span
                         className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${colorClasses}`}
                       >
@@ -101,62 +111,89 @@ export function VocabularyCard({
               <span>學習等級：Lv.{proficiency}</span>
             )}
             {importanceText && <span>重要程度：{importanceText}</span>}
+            {lastReviewDate !== undefined && (
+              <span>上次複習：{lastReviewDate || "尚未複習"}</span>
+            )}
+            {memorizeText && <span>記憶狀態：{memorizeText}</span>}
           </div>
         </div>
 
         {/* 右邊：Examples + Collocations */}
         <div className="flex-1 space-y-3">
           <div className="text-xs text-zinc-500 dark:text-zinc-400">
-            片語數量：{collocations ? collocations.length : 0}
+            片語數量：{totalCollocations}
           </div>
-          {collocations && collocations.length > 0 && (
-            <div className="space-y-2 rounded-xl p-3 text-sm text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100">
-              <div className="text-xs font-medium text-zinc-400">
-                搭配詞 Collocations
-              </div>
-              <div className="space-y-2">
-                {collocations.map((c, idx) => (
-                  <div
-                    key={idx}
-                    className="rounded-md border-l-4 border-l-zinc-300 bg-white p-2 pl-3 text-[13px] dark:border-l-zinc-600 dark:bg-zinc-900/40"
-                  >
-                    {(c.phrase || c.meaning) && (
-                      <div className="flex items-baseline gap-2">
-                        {c.phrase && (
-                          <span className="text-sm font-semibold text-black dark:text-zinc-50">
-                            {c.phrase}
-                          </span>
-                        )}
-                        {c.meaning && (
-                          <span className="text-xs text-zinc-600 dark:text-zinc-300">
-                            {c.meaning}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {c.example && (
-                      <div className="mt-1 text-xs text-zinc-700 dark:text-zinc-200">
-                        {c.example}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {safeSenses.map((sense, senseIdx) => {
+            const sensePos = sense.pos ?? "other";
+            const colorClasses = getPosColorClasses(sensePos);
+            const senseExamples = sense.examples ?? [];
+            const senseCollocations = sense.collocations ?? [];
 
-          {examples && examples.length > 0 && (
-            <div className="space-y-1 rounded-xl p-3 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-              <div className="text-xs font-medium text-zinc-400">
-                其他例句 Examples
+            return (
+              <div
+                key={`sense-${sensePos}-${senseIdx}`}
+                className="space-y-2 rounded-xl border border-zinc-100 p-3 text-sm text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-100"
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${colorClasses}`}
+                  >
+                    {sensePos}
+                  </span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {senseCollocations.length} 個片語，{senseExamples.length} 句例句
+                  </span>
+                </div>
+
+                {senseCollocations.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-zinc-400">
+                      搭配詞 Collocations
+                    </div>
+                    {senseCollocations.map((c, idx) => (
+                      <div
+                        key={`col-${senseIdx}-${idx}`}
+                        className="rounded-md border-l-4 border-l-zinc-300 bg-white p-2 pl-3 text-[13px] dark:border-l-zinc-600 dark:bg-zinc-900/40"
+                      >
+                        {(c.phrase || c.phrase_chinese) && (
+                          <div className="flex items-baseline gap-2">
+                            {c.phrase && (
+                              <span className="text-sm font-semibold text-black dark:text-zinc-50">
+                                {c.phrase}
+                              </span>
+                            )}
+                            {c.phrase_chinese && (
+                              <span className="text-xs text-zinc-600 dark:text-zinc-300">
+                                {c.phrase_chinese}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        {c.phrase_example && (
+                          <div className="mt-1 text-xs text-zinc-700 dark:text-zinc-200">
+                            {c.phrase_example}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {senseExamples.length > 0 && (
+                  <div className="space-y-1 rounded-xl p-2 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+                    <div className="text-xs font-medium text-zinc-400">
+                      例句 Examples
+                    </div>
+                    <ul className="list-disc space-y-1 pl-5">
+                      {senseExamples.map((e, idx) => (
+                        <li key={`ex-${senseIdx}-${idx}`}>{e}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
-              <ul className="list-disc space-y-1 pl-5">
-                {examples.map((e, idx) => (
-                  <li key={idx}>{e}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+            );
+          })}
         </div>
       </div>
     </div>

@@ -7,18 +7,23 @@ type WordResponse = {
 	_id: string;
 	id: string;
 	word: string;
+	lemma?: string;
 	source?: string;
 	created_date?: string;
 	proficiency?: number;
 	importance?: number;
 	memorize?: string | boolean;
-	examples?: string[];
-	collocations?: {
-		phrase?: string;
-		meaning?: string;
-		example?: string;
+	last_review_date?: string;
+	senses?: {
+		pos?: string;
+		chinese?: string;
+		examples?: string[];
+		collocations?: {
+			phrase?: string;
+			phrase_chinese?: string;
+			phrase_example?: string;
+		}[];
 	}[];
-	posandchinese?: { [pos: string]: string };
 };
 
 type WordListResponse = {
@@ -152,11 +157,17 @@ export default function AllWordsPage() {
 		return selectedProficiency.includes(value);
 	};
 
-	const matchesPos = (map?: { [pos: string]: string }) => {
+	const matchesPos = (
+		senses?: {
+			pos?: string;
+		}[],
+	) => {
 		if (selectedPos.length === 0) return true;
-		if (!map) return false;
+		if (!senses || senses.length === 0) return false;
 
-		const entryPos = Object.keys(map).map((pos) => pos.trim().toLowerCase());
+		const entryPos = senses
+			.map((sense) => (sense.pos ?? "").trim().toLowerCase())
+			.filter(Boolean);
 		const pickedPos = selectedPos.map((pos) => pos.trim().toLowerCase());
 		return pickedPos.some((pos) => entryPos.includes(pos));
 	};
@@ -203,13 +214,19 @@ export default function AllWordsPage() {
 
 	const filteredWords = sourceWords.filter((entry) => {
 		const passesEnglish = matchesEnglish(entry.word);
-		const chineseValues = entry.posandchinese
-			? Object.values(entry.posandchinese).join(" ")
-			: "";
+		const chineseValues = (entry.senses ?? [])
+			.flatMap((sense) => {
+				const meanings = sense.chinese ? [sense.chinese] : [];
+				const phraseMeanings = (sense.collocations ?? [])
+					.map((item) => item.phrase_chinese ?? "")
+					.filter(Boolean);
+				return meanings.concat(phraseMeanings);
+			})
+			.join(" ");
 		const passesChinese = matchesChinese(chineseValues);
 		const passesImportance = matchesImportance(entry.importance);
 		const passesProficiency = matchesProficiency(entry.proficiency);
-		const passesPos = matchesPos(entry.posandchinese);
+		const passesPos = matchesPos(entry.senses);
 		return (
 			passesEnglish &&
 			passesChinese &&
@@ -452,9 +469,8 @@ export default function AllWordsPage() {
 								proficiency={entry.proficiency}
 								importance={entry.importance}
 								memorize={entry.memorize}
-								examples={entry.examples}
-								collocations={entry.collocations}
-								posAndChinese={entry.posandchinese}
+								senses={entry.senses}
+								lastReviewDate={entry.last_review_date}
 							/>
 						))}
 					</div>

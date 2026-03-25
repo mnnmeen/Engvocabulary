@@ -90,7 +90,17 @@ async def get_stats():
         {
             "$project": {
                 "collocations_count": {
-                    "$size": {"$ifNull": ["$collocations", []]}
+                    "$sum": {
+                        "$map": {
+                            "input": {"$ifNull": ["$senses", []]},
+                            "as": "sense",
+                            "in": {
+                                "$size": {
+                                    "$ifNull": ["$$sense.collocations", []]
+                                }
+                            },
+                        }
+                    }
                 }
             }
         },
