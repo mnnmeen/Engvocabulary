@@ -7,12 +7,12 @@ from datetime import datetime
 from typing import Any
 
 from db import get_database
-from gemini_cli import call_gemini
+from openrouter_cli import call_openrouter
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Generate a review article from selected vocabulary using Gemini."
+        description="Generate a review article from selected vocabulary using OpenRouter."
     )
     parser.add_argument("--count", type=int, default=30, help="Target number of words")
     parser.add_argument(
@@ -23,13 +23,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--model",
-        default="gemini-2.0-flash",
-        help="Gemini model name (free-tier capable depending on quota)",
+        default="openrouter/auto",
+        help="OpenRouter model name",
     )
     parser.add_argument(
         "--fallback-models",
-        default="gemini-2.5-flash",
-        help="Comma-separated fallback Gemini models when primary model is unavailable",
+        default="",
+        help="Comma-separated fallback OpenRouter models when primary model is unavailable",
     )
     parser.add_argument(
         "--temperature",
@@ -41,7 +41,7 @@ def parse_args() -> argparse.Namespace:
         "--max-output-tokens",
         type=int,
         default=900,
-        help="Gemini max output tokens",
+        help="OpenRouter max output tokens",
     )
     parser.add_argument(
         "--topic",
@@ -88,7 +88,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Only select words and print prompt, do not call Gemini API",
+        help="Only select words and print prompt, do not call OpenRouter API",
     )
     parser.add_argument(
         "--min-required-words",
@@ -446,10 +446,10 @@ async def main() -> None:
         print(json.dumps(summary, ensure_ascii=False, indent=2))
         return
 
-    api_key = os.getenv("GEMINI_API_KEY")
+    api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
         raise RuntimeError(
-            "GEMINI_API_KEY is not set. Set it first, e.g. PowerShell: $env:GEMINI_API_KEY='your_api_key'"
+            "OPENROUTER_API_KEY is not set. Set it first, e.g. PowerShell: $env:OPENROUTER_API_KEY='your_api_key'"
         )
 
     if not words:
@@ -483,7 +483,7 @@ async def main() -> None:
 
         for model_name in models_to_try:
             try:
-                article = call_gemini(
+                article = call_openrouter(
                     api_key=api_key,
                     prompt=attempt_prompt,
                     model=model_name,
@@ -522,14 +522,14 @@ async def main() -> None:
         error_output = {
             **summary,
             "error": {
-                "type": "gemini_api_error",
+                "type": "openrouter_api_error",
                 "message": last_error_message,
             },
             "tried_models": models_to_try,
             "tried_word_counts": tried_word_counts,
             "prompt": used_prompt,
             "hint": (
-                "If Gemini free-tier quota is exceeded, wait for reset or use another key/project. "
+                "If your OpenRouter quota is exceeded, wait for reset or use another key/project. "
                 "If model is unavailable, keep fallback models enabled. "
                 "If reasoning keeps consuming tokens, lower --count or --max-output-tokens."
             ),
@@ -548,7 +548,7 @@ async def main() -> None:
         )
 
         try:
-            continuation = call_gemini(
+            continuation = call_openrouter(
                 api_key=api_key,
                 prompt=continuation_prompt,
                 model=used_model,
@@ -580,7 +580,7 @@ async def main() -> None:
         ) + "\n- Ensure the text ends with a complete sentence."
 
         try:
-            salvage_article = call_gemini(
+            salvage_article = call_openrouter(
                 api_key=api_key,
                 prompt=salvage_prompt,
                 model=used_model,

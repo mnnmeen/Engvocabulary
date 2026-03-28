@@ -5,20 +5,13 @@ from urllib import error, request
 def _extract_text(response_data: dict) -> str:
     choices = response_data.get("choices", [])
     text_chunks: list[str] = []
-    saw_reasoning = False
-    finish_reason = None
 
     for choice in choices:
-        finish_reason = choice.get("finish_reason")
         message = choice.get("message", {})
-        if message.get("reasoning"):
-            saw_reasoning = True
-
         content = message.get("content")
         if isinstance(content, str) and content.strip():
             text_chunks.append(content)
         elif isinstance(content, list):
-            # Some providers return content parts instead of a plain string.
             for part in content:
                 if isinstance(part, dict):
                     text = part.get("text")
@@ -28,13 +21,8 @@ def _extract_text(response_data: dict) -> str:
     if text_chunks:
         return "\n".join(text_chunks)
 
-    if saw_reasoning and finish_reason == "length":
-        raise RuntimeError(
-            "Model returned reasoning but no final content (finish_reason=length)."
-        )
-
     raise RuntimeError(
-        "Model returned no final content. Raw response: "
+        "OpenRouter returned no final content. Raw response: "
         + json.dumps(response_data, ensure_ascii=False, indent=2)
     )
 

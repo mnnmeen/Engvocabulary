@@ -1,11 +1,10 @@
 import argparse
 import os
 import sys
-
 from openrouter_cli import call_openrouter
 
 
-def call_gemini(
+def call_mistral(
     api_key: str,
     prompt: str,
     model: str,
@@ -78,7 +77,7 @@ def main() -> int:
         return 1
 
     try:
-        output = call_gemini(
+        output = call_mistral(
             api_key=api_key,
             prompt=prompt,
             model=args.model,
