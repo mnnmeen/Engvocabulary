@@ -32,6 +32,11 @@ export default function TrainingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [historyItems, setHistoryItems] = useState<TrainingHistoryItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const PAGE_LIMIT = 10;
 
   useEffect(() => {
     let isMounted = true;
@@ -41,7 +46,7 @@ export default function TrainingPage() {
       setErrorText(null);
 
       try {
-        const res = await fetch(`${API_BASE}/training?page=1&limit=30`);
+        const res = await fetch(`${API_BASE}/training?page=${page}&limit=${PAGE_LIMIT}`);
         if (!res.ok) {
           const maybeJson = await res.json().catch(() => null);
           const detail =
@@ -54,6 +59,8 @@ export default function TrainingPage() {
         const data = (await res.json()) as TrainingHistoryResponse;
         if (isMounted) {
           setHistoryItems(data.items || []);
+          setTotalPages(Math.max(1, data.total_pages || 1));
+          setTotalCount(data.total || 0);
         }
       } catch (error) {
         if (!isMounted) {
@@ -79,7 +86,7 @@ export default function TrainingPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [page]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 via-slate-50 to-emerald-50 px-6 py-12 text-zinc-900 dark:from-zinc-950 dark:via-zinc-900 dark:to-emerald-950 dark:text-zinc-50">
@@ -126,32 +133,58 @@ export default function TrainingPage() {
           ) : historyItems.length === 0 ? (
             <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">目前還沒有練習紀錄，先建立第一篇吧。</p>
           ) : (
-            <div className="mt-4 space-y-3">
-              {historyItems.map((item) => (
-                <Link
-                  key={item.training_id}
-                  href={`/training/${item.training_id}`}
-                  className="block rounded-xl border border-zinc-200 bg-white p-4 transition hover:border-emerald-300 hover:bg-emerald-50/40 dark:border-zinc-700 dark:bg-zinc-900/40 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/20"
-                >
-                  <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{item.date || "未標註日期"}</div>
-                  <div className="mt-2 line-clamp-2 text-sm text-zinc-700 dark:text-zinc-200">{item.article_preview || "（無文章內容）"}</div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {(item.words || []).slice(0, 6).map((word) => (
-                      <span
-                        key={`${item.training_id}-${word}`}
-                        className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200"
-                      >
-                        {word}
-                      </span>
-                    ))}
-                    {(item.words_count || 0) > 6 && (
-                      <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2.5 py-1 text-[11px] font-semibold text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
-                        +{item.words_count - 6} words
-                      </span>
-                    )}
-                  </div>
-                </Link>
-              ))}
+            <div className="mt-4 space-y-4">
+              <div className="space-y-3">
+                {historyItems.map((item) => (
+                  <Link
+                    key={item.training_id}
+                    href={`/training/${item.training_id}`}
+                    className="block rounded-xl border border-zinc-200 bg-white p-4 transition hover:border-emerald-300 hover:bg-emerald-50/40 dark:border-zinc-700 dark:bg-zinc-900/40 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/20"
+                  >
+                    <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{item.date || "未標註日期"}</div>
+                    <div className="mt-2 line-clamp-2 text-sm text-zinc-700 dark:text-zinc-200">{item.article_preview || "（無文章內容）"}</div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {(item.words || []).slice(0, 6).map((word) => (
+                        <span
+                          key={`${item.training_id}-${word}`}
+                          className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200"
+                        >
+                          {word}
+                        </span>
+                      ))}
+                      {(item.words_count || 0) > 6 && (
+                        <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2.5 py-1 text-[11px] font-semibold text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                          +{item.words_count - 6} words
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm dark:border-zinc-700 dark:bg-zinc-900/40">
+                <div className="text-zinc-600 dark:text-zinc-300">
+                  第 {page} / {totalPages} 頁，共 {totalCount} 筆
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                    disabled={page <= 1 || isLoading}
+                    className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+                  >
+                    上一頁
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                    disabled={page >= totalPages || isLoading}
+                    className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+                  >
+                    下一頁
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </section>
