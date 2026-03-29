@@ -288,12 +288,12 @@ export default function AllWordsPage() {
 
 	return (
 		<div className="min-h-screen bg-zinc-50 font-sans dark:bg-black">
-			<div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
+			<div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
 				<div className="flex flex-col gap-5">
 					<div className="rounded-2xl bg-white px-5 py-4 shadow-md dark:bg-zinc-900 sm:px-6">
 						<h1 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-50 sm:text-xl">
-						所有單字
-					</h1>
+							所有單字
+						</h1>
 					<div className="rounded-2xl border border-zinc-100 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900/40">
 						<div className="mb-3 text-xs font-medium uppercase text-zinc-400">
 							搜尋
@@ -446,7 +446,7 @@ export default function AllWordsPage() {
 					{error && (
 						<p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>
 					)}
-					<div className="mt-3 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
+					<div className="mt-3 flex flex-col items-start gap-1 text-xs text-zinc-500 dark:text-zinc-400 sm:flex-row sm:items-center sm:justify-between">
 						<span>{isFiltering ? `搜尋結果 ${filteredWords.length} 筆` : "每頁 20 筆"}</span>
 						<span>
 							第 {page} / {totalPages} 頁
@@ -488,7 +488,8 @@ export default function AllWordsPage() {
 					</div>
 				)}
 
-				<div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+				<div className="overflow-x-auto pb-1">
+					<div className="flex min-w-max items-center justify-center gap-2 pt-2">
 					<button
 						className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition hover:border-zinc-300 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
 						onClick={handlePrevPage}
@@ -532,6 +533,7 @@ export default function AllWordsPage() {
 					>
 						下一頁
 					</button>
+					</div>
 				</div>
 			</div>
 		</div>

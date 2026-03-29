@@ -207,16 +207,16 @@ export default function TrainingDetailPage() {
   }, [detail, selectedWord]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-slate-50 to-teal-50 px-6 py-12 text-zinc-900 dark:from-zinc-950 dark:via-zinc-900 dark:to-emerald-950 dark:text-zinc-50">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-slate-50 to-teal-50 px-4 py-8 text-zinc-900 dark:from-zinc-950 dark:via-zinc-900 dark:to-emerald-950 dark:text-zinc-50 sm:px-6 sm:py-12">
       <div className="mx-auto w-full max-w-7xl space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.3em] text-zinc-400">Training Article</div>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">{detail?.date || "練習文章"}</h1>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{detail?.date || "練習文章"}</h1>
           </div>
           <Link
             href="/training"
-            className="inline-flex items-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+            className="inline-flex w-full items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 sm:w-auto"
           >
             返回訓練首頁
           </Link>
@@ -238,7 +238,7 @@ export default function TrainingDetailPage() {
           <>
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
               <div className="space-y-6">
-                <article className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-6 leading-8 text-zinc-800 shadow-sm dark:border-emerald-900/80 dark:bg-emerald-950/30 dark:text-zinc-100">
+                <article className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 leading-7 text-zinc-800 shadow-sm dark:border-emerald-900/80 dark:bg-emerald-950/30 dark:text-zinc-100 sm:p-6 sm:leading-8">
                   <div className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700/80 dark:text-emerald-300/80">
                     點擊粗體練習單字可在右側看單字卡
                   </div>
@@ -251,7 +251,7 @@ export default function TrainingDetailPage() {
                   ))}
                 </article>
 
-                <section className="rounded-2xl border border-zinc-200/70 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/70">
+                <section className="rounded-2xl border border-zinc-200/70 bg-white/90 p-4 shadow-sm backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/70 sm:p-5">
                   <div className="mb-3 text-sm font-semibold">練習單字（可點擊查看單字卡）</div>
                   <div className="flex flex-wrap gap-2">
                     {(detail.words || []).map((word) => (

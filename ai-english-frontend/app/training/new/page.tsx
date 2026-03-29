@@ -71,28 +71,28 @@ export default function NewTrainingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-slate-50 to-emerald-50 px-6 py-12 text-zinc-900 dark:from-zinc-950 dark:via-zinc-900 dark:to-emerald-950 dark:text-zinc-50">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-slate-50 to-emerald-50 px-4 py-8 text-zinc-900 dark:from-zinc-950 dark:via-zinc-900 dark:to-emerald-950 dark:text-zinc-50 sm:px-6 sm:py-12">
       <div className="mx-auto w-full max-w-6xl space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.3em] text-zinc-400">
               Training Builder
             </div>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">新增訓練</h1>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">新增訓練</h1>
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
               一鍵由後端自動挑選單字並生成複習文章，完成後直接寫入 training collection。
             </p>
           </div>
           <Link
             href="/training"
-            className="inline-flex items-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+            className="inline-flex w-full items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 sm:w-auto"
           >
             返回訓練首頁
           </Link>
         </div>
 
-        <section className="rounded-2xl border border-zinc-200/70 bg-white/85 p-6 shadow-sm backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/70">
-          <h2 className="text-xl font-semibold">1. 自動生成訓練</h2>
+        <section className="rounded-2xl border border-zinc-200/70 bg-white/85 p-4 shadow-sm backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/70 sm:p-6">
+          <h2 className="text-lg font-semibold sm:text-xl">1. 自動生成訓練</h2>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
             系統正在自動挑選 priority_group=high 的單字並生成 AI 複習文章，完成後會自動帶你進入結果頁。
           </p>

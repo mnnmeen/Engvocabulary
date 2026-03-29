@@ -286,24 +286,24 @@ export default function TrainingNewResultPage() {
   const selectedFeedback = selectedWordKey ? wordFeedback[selectedWordKey] : undefined;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-slate-50 to-emerald-50 px-6 py-12 text-zinc-900 dark:from-zinc-950 dark:via-zinc-900 dark:to-emerald-950 dark:text-zinc-50">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-slate-50 to-emerald-50 px-4 py-8 text-zinc-900 dark:from-zinc-950 dark:via-zinc-900 dark:to-emerald-950 dark:text-zinc-50 sm:px-6 sm:py-12">
       <div className="mx-auto w-full max-w-6xl space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.3em] text-zinc-400">Training Builder</div>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight">2. 生成結果</h1>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">2. 生成結果</h1>
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">AI 文章已生成完成，以下是本次練習內容。</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
             <Link
               href="/training/new"
-              className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
+              className="inline-flex w-full items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 sm:w-auto"
             >
               再生成一篇
             </Link>
             <Link
               href="/training"
-              className="inline-flex items-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+              className="inline-flex w-full items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 sm:w-auto"
             >
               返回訓練首頁
             </Link>
@@ -324,7 +324,7 @@ export default function TrainingNewResultPage() {
           </section>
         ) : (
           <div className="space-y-4">
-            <article className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-5 leading-8 text-zinc-800 dark:border-emerald-900/80 dark:bg-emerald-950/30 dark:text-zinc-100">
+            <article className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 leading-7 text-zinc-800 dark:border-emerald-900/80 dark:bg-emerald-950/30 dark:text-zinc-100 sm:p-5 sm:leading-8">
               <h2 className="mb-3 text-lg font-semibold">AI 文章</h2>
               {articleLines.map((line, index) => (
                 <p key={`line-${index}`} className="mb-3 last:mb-0">
@@ -334,13 +334,13 @@ export default function TrainingNewResultPage() {
             </article>
 
             <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900/40">
-              <div className="mb-4 flex items-center justify-between">
+              <div className="mb-4 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
                 <h2 className="text-lg font-semibold">本次練習單字</h2>
                 <button
                   type="button"
                   onClick={() => void saveAllFeedback()}
                   disabled={Object.keys(wordFeedback).length === 0 || isSaving}
-                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                  className={`w-full rounded-lg px-4 py-2 text-sm font-semibold transition sm:w-auto ${
                     Object.keys(wordFeedback).length === 0 || isSaving
                       ? "border border-zinc-300 bg-zinc-100 text-zinc-400 cursor-not-allowed dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500"
                       : "border-0 bg-emerald-600 text-white hover:bg-emerald-500 dark:bg-emerald-700 dark:hover:bg-emerald-600"
@@ -355,7 +355,7 @@ export default function TrainingNewResultPage() {
                     const isSelected = selectedWord?.toLowerCase() === word.toLowerCase();
                     const wordFeedbackStatus = wordFeedback[word.toLowerCase()];
                     
-                    let baseClass = "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left transition ";
+                    let baseClass = "flex w-full flex-col items-start justify-between gap-1 rounded-lg border px-3 py-3 text-left transition sm:flex-row sm:items-center sm:gap-3 sm:px-4 ";
                     
                     if (isSelected) {
                       baseClass += "border-emerald-500 bg-emerald-50 text-emerald-900 dark:border-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-100";

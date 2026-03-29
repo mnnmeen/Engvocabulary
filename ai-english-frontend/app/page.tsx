@@ -61,13 +61,13 @@ export default async function Home() {
   const { hasTrainingToday } = await getTodayTrainingStatus();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-slate-50 to-emerald-50 px-6 py-12 text-zinc-900 dark:from-zinc-950 dark:via-zinc-900 dark:to-emerald-950 dark:text-zinc-50">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-slate-50 to-emerald-50 px-4 py-8 text-zinc-900 dark:from-zinc-950 dark:via-zinc-900 dark:to-emerald-950 dark:text-zinc-50 sm:px-6 sm:py-12">
       <div className="mx-auto w-full max-w-5xl">
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <div className="text-xs font-semibold uppercase tracking-[0.3em] text-zinc-400">
             Engvocabulary
           </div>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight">
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
             學習控制台
           </h1>
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
@@ -77,13 +77,13 @@ export default async function Home() {
 
         {/* 訓練狀態提示 */}
         <div
-          className={`mb-8 rounded-2xl p-6 ${
+          className={`mb-6 rounded-2xl p-4 sm:mb-8 sm:p-6 ${
             hasTrainingToday
               ? "border border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/80 dark:bg-emerald-950/60 dark:text-emerald-100"
               : "border border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/80 dark:bg-amber-950/60 dark:text-amber-100"
           }`}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
             <span className="text-2xl">{hasTrainingToday ? "✅" : "📚"}</span>
             <div>
               <p className="font-semibold">
@@ -100,13 +100,13 @@ export default async function Home() {
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
-          <div className="group rounded-2xl border border-zinc-200/70 bg-white/80 p-6 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-lg dark:border-zinc-800/80 dark:bg-zinc-900/70">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
+          <div className="group rounded-2xl border border-zinc-200/70 bg-white/80 p-5 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-lg dark:border-zinc-800/80 dark:bg-zinc-900/70 sm:p-6">
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
               現在有幾個單字
             </div>
             <div className="mt-6 flex items-baseline gap-3">
-              <span className="text-4xl font-semibold">
+              <span className="text-3xl font-semibold sm:text-4xl">
                 {typeof wordCount === "number" ? wordCount : "--"}
               </span>
               <span className="text-sm text-zinc-500 dark:text-zinc-400">
@@ -118,12 +118,12 @@ export default async function Home() {
             </p>
           </div>
 
-          <div className="group rounded-2xl border border-slate-200/70 bg-white/80 p-6 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800/80 dark:bg-zinc-900/70">
+          <div className="group rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-lg dark:border-slate-800/80 dark:bg-zinc-900/70 sm:p-6">
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
               片語數量
             </div>
             <div className="mt-6 flex items-baseline gap-3">
-              <span className="text-4xl font-semibold">
+              <span className="text-3xl font-semibold sm:text-4xl">
                 {typeof collocationsCount === "number" ? collocationsCount : "--"}
               </span>
               <span className="text-sm text-zinc-500 dark:text-zinc-400">
@@ -135,13 +135,13 @@ export default async function Home() {
             </p>
           </div>
 
-          <div className="group relative overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-emerald-900/80 dark:bg-emerald-950/60">
+          <div className="group relative overflow-hidden rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-emerald-900/80 dark:bg-emerald-950/60 sm:p-6">
             <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-emerald-200/40 blur-2xl dark:bg-emerald-400/20" />
             <div className="relative">
               <div className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-300">
                 新增單字
               </div>
-              <h2 className="mt-4 text-2xl font-semibold">建立新的單字卡</h2>
+              <h2 className="mt-4 text-xl font-semibold sm:text-2xl">建立新的單字卡</h2>
               <p className="mt-2 text-sm text-emerald-700/80 dark:text-emerald-200/80">
                 立即加入新的學習內容。
               </p>

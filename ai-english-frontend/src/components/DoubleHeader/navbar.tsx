@@ -17,7 +17,7 @@ const mainLinks = [
 ];
 
 export function DoubleHeader() {
-  const [opened, { toggle }] = useDisclosure(false);
+  const [opened, { toggle, close }] = useDisclosure(false);
   const pathname = usePathname();
 
   const isActiveLink = (link: string) => {
@@ -37,6 +37,7 @@ export function DoubleHeader() {
       key={item.label}
       className={classes.mainLink}
       data-active={isActiveLink(item.link) || undefined}
+      onClick={close}
     >
       {item.label}
     </Anchor>
@@ -47,15 +48,15 @@ export function DoubleHeader() {
   return (
     <header className={classes.header}>
       <Container className={classes.inner} size="lg">
-        <Group gap="sm" align="center">
+        <Group gap="xs" align="center" wrap="nowrap">
           <Image
             src="/memora-logo.png"   // 放在 public/memora-logo.png
             alt="Memora logo"
             width={68}
             height={68}
-            style={{ height: 68, width: 68 }}
+            className={classes.logo}
           />
-          <Text fw={700} size="lg" style={{ color: '#204280' }}>
+          <Text fw={700} size="md" style={{ color: '#204280' }} className={classes.brand}>
             Memora單字記憶
           </Text>
         </Group>
@@ -75,6 +76,11 @@ export function DoubleHeader() {
           aria-label="Toggle navigation"
         />
       </Container>
+      {opened && (
+        <Container className={classes.mobileMenu} size="lg" hiddenFrom="sm">
+          <Box className={classes.mobileMenuInner}>{mainItems}</Box>
+        </Container>
+      )}
     </header>
   );
 }

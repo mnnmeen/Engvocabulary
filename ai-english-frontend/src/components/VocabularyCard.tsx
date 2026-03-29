@@ -68,13 +68,13 @@ export function VocabularyCard({
   );
 
   return (
-    <div className="w-full max-w-4xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="flex gap-6">
+    <div className="w-full max-w-4xl rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900 sm:p-6">
+      <div className="flex flex-col gap-5 md:flex-row md:gap-6">
         {/* 左邊：單字 + 詞性與中文 + 等級資訊 */}
         <div className="flex-1">
           <div className="mb-4 flex items-start justify-between gap-6">
             <div>
-              <div className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+              <div className="break-words text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-2xl">
                 {word}
               </div>
             </div>
@@ -91,7 +91,7 @@ export function VocabularyCard({
                   const meaning = sense.chinese ?? "";
                   const colorClasses = getPosColorClasses(pos);
                   return (
-                    <div key={`${pos}-${idx}`} className="flex items-start gap-3">
+                    <div key={`${pos}-${idx}`} className="flex flex-wrap items-start gap-2 sm:gap-3">
                       <span
                         className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${colorClasses}`}
                       >
@@ -104,7 +104,7 @@ export function VocabularyCard({
               </div>
             </div>
           )}
-          <div className="mt-2 flex flex-col items-start gap-1 text-right text-[11px] text-zinc-500 dark:text-zinc-400">
+          <div className="mt-2 flex flex-col items-start gap-1 text-left text-[11px] text-zinc-500 dark:text-zinc-400 sm:text-right">
             {source && <span>來源：{source}</span>}
             {createdDate && <span>建立日期：{createdDate}</span>}
             {typeof proficiency === "number" && (
@@ -156,7 +156,7 @@ export function VocabularyCard({
                         className="rounded-md border-l-4 border-l-zinc-300 bg-white p-2 pl-3 text-[13px] dark:border-l-zinc-600 dark:bg-zinc-900/40"
                       >
                         {(c.phrase || c.phrase_chinese) && (
-                          <div className="flex items-baseline gap-2">
+                          <div className="flex flex-wrap items-baseline gap-2">
                             {c.phrase && (
                               <span className="text-sm font-semibold text-black dark:text-zinc-50">
                                 {c.phrase}

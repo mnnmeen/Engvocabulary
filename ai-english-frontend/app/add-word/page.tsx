@@ -228,13 +228,13 @@ export default function AddWordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-amber-50 px-6 py-12 text-zinc-900 dark:from-zinc-950 dark:via-emerald-950 dark:to-zinc-900 dark:text-zinc-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-amber-50 px-4 py-8 text-zinc-900 dark:from-zinc-950 dark:via-emerald-950 dark:to-zinc-900 dark:text-zinc-50 sm:px-6 sm:py-12">
       <div className="mx-auto w-full max-w-5xl">
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <div className="text-xs font-semibold uppercase tracking-[0.3em] text-zinc-400">
             Add Word
           </div>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight">新增單字</h1>
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">新增單字</h1>
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
             新增英文單字，並依需求配置詞性、例句、搭配詞與搭配詞例句。
           </p>
@@ -242,7 +242,7 @@ export default function AddWordPage() {
 
         <form
           onSubmit={(event) => void handleSubmit(event)}
-          className="space-y-6 rounded-2xl border border-zinc-200/70 bg-white/85 p-8 shadow-sm backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/70"
+          className="space-y-6 rounded-2xl border border-zinc-200/70 bg-white/85 p-4 shadow-sm backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/70 sm:p-8"
         >
           <div className="grid gap-5 md:grid-cols-3">
             <label className="md:col-span-3 flex flex-col gap-2 text-sm">
@@ -294,9 +294,9 @@ export default function AddWordPage() {
             {senses.map((sense, senseIndex) => (
               <section
                 key={`sense-${senseIndex}`}
-                className="rounded-2xl border border-dashed border-zinc-200 bg-white/70 p-6 dark:border-zinc-800 dark:bg-zinc-900/40"
+                className="rounded-2xl border border-dashed border-zinc-200 bg-white/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/40 sm:p-6"
               >
-                <div className="mb-4 flex items-center justify-between gap-4">
+                <div className="mb-4 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:gap-4">
                   <div className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
                     詞性區塊 {senseIndex + 1}
                   </div>
@@ -327,7 +327,7 @@ export default function AddWordPage() {
                 </label>
 
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:gap-4">
                     <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">例句</h3>
                     <button
                       type="button"
@@ -339,7 +339,7 @@ export default function AddWordPage() {
                   </div>
 
                   {sense.examples.map((example, exampleIndex) => (
-                    <div key={`example-${senseIndex}-${exampleIndex}`} className="flex items-center gap-2">
+                    <div key={`example-${senseIndex}-${exampleIndex}`} className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
                       <input
                         className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-emerald-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                         placeholder="輸入此詞性的例句"
@@ -362,7 +362,7 @@ export default function AddWordPage() {
                 </div>
 
                 <div className="mt-6 space-y-3">
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center sm:gap-4">
                     <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">搭配詞與搭配詞例句</h3>
                     <button
                       type="button"
@@ -435,18 +435,18 @@ export default function AddWordPage() {
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             <button
               type="button"
               onClick={resetForm}
-              className="inline-flex items-center justify-center rounded-full border border-zinc-200 bg-white px-5 py-2 text-sm font-semibold text-zinc-600 transition hover:border-zinc-300 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+              className="inline-flex w-full items-center justify-center rounded-full border border-zinc-200 bg-white px-5 py-2 text-sm font-semibold text-zinc-600 transition hover:border-zinc-300 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 sm:w-auto"
             >
               清空
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className={`inline-flex items-center justify-center rounded-full px-6 py-2 text-sm font-semibold text-white shadow-md transition ${
+              className={`inline-flex w-full items-center justify-center rounded-full px-6 py-2 text-sm font-semibold text-white shadow-md transition sm:w-auto ${
                 isSaving
                   ? "cursor-not-allowed bg-emerald-300"
                   : "bg-emerald-600 hover:bg-emerald-500"
