@@ -239,7 +239,11 @@ def _select_training_words(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_build_allowed_origins(),
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+    allow_origin_regex=(
+        r"https?://(localhost|127\.0\.0\.1)(:\d+)?$"
+        r"|https://[a-z0-9-]+\.up\.railway\.app$"
+        r"|https://[a-z0-9-]+\.vercel\.app$"
+    ),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
