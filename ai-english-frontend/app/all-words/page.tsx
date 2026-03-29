@@ -37,6 +37,10 @@ type WordListResponse = {
 const importanceOptions = [5, 4, 3, 2, 1] as const;
 const proficiencyOptions = [1, 2, 3, 4, 5] as const;
 const posOptions = ["n.", "v.", "adj.", "adv.", "prep.", "conj.", "pron.", "int."] as const;
+const API_BASE =
+	process.env.NEXT_PUBLIC_API_BASE ||
+	process.env.NEXT_PUBLIC_API_BASE_URL ||
+	"http://localhost:8000";
 
 export default function AllWordsPage() {
 	const [error, setError] = useState<string | null>(null);
@@ -70,8 +74,7 @@ export default function AllWordsPage() {
 			try {
 				setIsLoading(true);
 				setError(null);
-				const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-				const res = await fetch(`${baseUrl}/words?page=${page}&limit=${pageSize}`);
+				const res = await fetch(`${API_BASE}/words?page=${page}&limit=${pageSize}`);
 				if (!res.ok) {
 					throw new Error(`HTTP ${res.status}`);
 				}
@@ -100,8 +103,7 @@ export default function AllWordsPage() {
 			try {
 				setIsLoading(true);
 				setError(null);
-				const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-				const initialRes = await fetch(`${baseUrl}/words?page=1&limit=100`);
+				const initialRes = await fetch(`${API_BASE}/words?page=1&limit=100`);
 				if (!initialRes.ok) {
 					throw new Error(`HTTP ${initialRes.status}`);
 				}
@@ -111,7 +113,7 @@ export default function AllWordsPage() {
 				const totalPageCount = initialData.total_pages ?? 1;
 
 				for (let pageIndex = 2; pageIndex <= totalPageCount; pageIndex += 1) {
-					const res = await fetch(`${baseUrl}/words?page=${pageIndex}&limit=100`);
+					const res = await fetch(`${API_BASE}/words?page=${pageIndex}&limit=100`);
 					if (!res.ok) {
 						throw new Error(`HTTP ${res.status}`);
 					}

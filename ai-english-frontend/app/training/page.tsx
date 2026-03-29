@@ -24,8 +24,8 @@ type TrainingHistoryResponse = {
 };
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_BASE ||
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
   "http://localhost:8000";
 
 export default function TrainingPage() {
@@ -69,7 +69,7 @@ export default function TrainingPage() {
         const message = error instanceof Error ? error.message : "讀取練習紀錄失敗。";
         if (message.toLowerCase().includes("failed to fetch")) {
           setErrorText(
-            "無法連線到後端 API（Failed to fetch）。請確認 http://localhost:8000 已啟動。"
+            `無法連線到後端 API（Failed to fetch）。目前 API_BASE: ${API_BASE}`
           );
         } else {
           setErrorText(message);
