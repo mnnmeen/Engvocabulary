@@ -213,6 +213,24 @@ async def mongo_ping():
     return {"ok": result.get("ok", 0)}
 
 
+@app.get("/words/by-word/{word}")
+async def get_word_by_word(word: str):
+    db = get_database()
+    collection = db["words"]
+
+    normalized = _normalize_word(word)
+    if not normalized:
+        raise HTTPException(status_code=400, detail="word is required")
+
+    escaped = re.escape(normalized)
+    doc = await collection.find_one({"word": {"$regex": f"^{escaped}$", "$options": "i"}})
+    if doc is None:
+        raise HTTPException(status_code=404, detail="Word not found")
+
+    doc["_id"] = str(doc.get("_id"))
+    return doc
+
+
 @app.get("/words/{word_id}")
 async def get_word(word_id: str):
     """示範：從 english_words.words 取出指定 id 的單字資料。"""
