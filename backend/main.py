@@ -75,17 +75,30 @@ def _normalize_word(value: str) -> str:
 
 
 def _bold_training_words(article: str, words: list[str]) -> str:
-    target_set = {w.lower() for w in words if w}
-    if not target_set:
+    targets: list[str] = []
+    seen: set[str] = set()
+    for raw in words:
+        normalized = _normalize_word(str(raw or ""))
+        if not normalized:
+            continue
+        key = normalized.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        targets.append(normalized)
+
+    if not targets:
         return article
 
-    def replace_match(match: re.Match[str]) -> str:
-        token = match.group(0)
-        if token.lower() in target_set:
-            return f"**{token}**"
-        return token
+    # 片語優先，避免先匹配短詞造成長片語無法完整加粗。
+    targets.sort(key=len, reverse=True)
 
-    return re.sub(r"[A-Za-z]+(?:'[A-Za-z]+)?", replace_match, article)
+    for target in targets:
+        escaped = re.escape(target).replace(r"\ ", r"\s+")
+        pattern = re.compile(rf"(?i)(?<![A-Za-z])({escaped})(?![A-Za-z])")
+        article = pattern.sub(lambda m: f"**{m.group(1)}**", article)
+
+    return article
 
 
 def _to_float(value: Any, default: float = 0.0) -> float:
@@ -399,9 +412,27 @@ async def generate_training_article(payload: TrainingGenerateRequest):
             new_word_limit=8,
             total_limit=25,
         )
-        selected_words = [w.get("word") for w in selection_result.get("words", [])]
+        selected_word_docs = selection_result.get("words", [])
+        selected_words = [w.get("word") for w in selected_word_docs]
+        review_words = [
+            _normalize_word(str(w.get("review_unit") or w.get("word") or ""))
+            for w in selected_word_docs
+        ]
+        review_words = [w for w in review_words if w]
+
+        pool_stats = selection_result.get("pools", {})
+        due_total = int(pool_stats.get("due", {}).get("total", 0))
+        at_risk_total = int(pool_stats.get("at_risk", {}).get("total", 0))
+        new_total = int(pool_stats.get("new", {}).get("total", 0))
+        maintenance_total = int(pool_stats.get("maintenance", {}).get("total", 0))
+        pool_count = due_total + at_risk_total + new_total + maintenance_total
+
         selection_meta = {
             "algorithm": "spaced_repetition_pools",
+            "pool_count": pool_count,
+            "vector_count": pool_count,
+            "selected_count": len(selected_words),
+            "rule": "spaced_repetition_pools",
             **selection_result.get("pools", {}),
         }
     except Exception as e:
@@ -431,6 +462,7 @@ async def generate_training_article(payload: TrainingGenerateRequest):
             docs=candidate_docs,
             selected_limit=selected_limit,
         )
+        review_words = selected_words  # Fallback 時沒有搭配詞
         selection_meta["algorithm"] = "priority_based_fallback"
 
     if not selected_words:
@@ -443,7 +475,7 @@ async def generate_training_article(payload: TrainingGenerateRequest):
     try:
         article = call_openrouter(
             api_key=api_key,
-            prompt=_build_training_prompt(selected_words),
+            prompt=_build_training_prompt(review_words),  # 用 review_words 生成文章
             model=payload.model,
             system=_build_training_system_instruction(),
             temperature=payload.temperature,
@@ -456,14 +488,15 @@ async def generate_training_article(payload: TrainingGenerateRequest):
     if not article:
         raise HTTPException(status_code=502, detail="AI returned empty article")
 
-    article_bolded = _bold_training_words(article, selected_words)
+    article_bolded = _bold_training_words(article, review_words)  # 標記 review_words
     now = datetime.utcnow()
 
     training_collection = db["training"]
     document = {
         "created_at": now.isoformat(),
         "date": now.strftime("%Y-%m-%d"),
-        "words": selected_words,
+        "words": selected_words,  # 存儲純單字用於卡片
+        "review_words": review_words,  # 存儲實際複習單位用於追蹤
         "article": article,
         "article_bolded": article_bolded,
         "training_ai": {

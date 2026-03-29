@@ -4,12 +4,67 @@ from datetime import datetime, date, timedelta
 from typing import List, Dict, Any, Optional
 import math
 from enum import Enum
+import random
 
 class PoolType(str, Enum):
     DUE = "due"
     AT_RISK = "at_risk"
     NEW = "new"
     MAINTENANCE = "maintenance"
+
+
+def _resolve_phrase_alternatives(phrase: str) -> str:
+    """把帶有 / 的片語展開成單一路徑，例如 bargain for/on sth -> bargain on sth。"""
+    normalized = " ".join(str(phrase).split())
+    if not normalized:
+        return normalized
+
+    resolved_tokens: List[str] = []
+    for token in normalized.split(" "):
+        if "/" not in token:
+            resolved_tokens.append(token)
+            continue
+
+        # 只在英文字母替代場景做展開，避免 URL 或奇怪符號誤拆。
+        parts = [p for p in token.split("/") if p]
+        if len(parts) >= 2 and all(any(ch.isalpha() for ch in p) for p in parts):
+            resolved_tokens.append(random.choice(parts))
+        else:
+            resolved_tokens.append(token)
+
+    return " ".join(resolved_tokens)
+
+def get_review_unit(word_doc: Dict[str, Any]) -> str:
+    """
+    從單字中隨機選出搭配詞或單字本身作為複習單位。
+    
+    Args:
+        word_doc: 單字字典
+    
+    Returns:
+        複習單位（可能是搭配詞或純單字）
+    
+    Examples:
+        "bargain" → 可能返回 "bargain for/on sth" 或 "bargain" 本身
+    """
+    # 收集所有可能的複習單位（搭配詞 + 單字本身）
+    review_units = [word_doc.get("word")]  # 第一個選項總是單字本身
+    
+    # 從所有 senses 中收集搭配詞
+    senses = word_doc.get("senses", [])
+    for sense in senses:
+        collocations = sense.get("collocations", [])
+        for collocation in collocations:
+            phrase = collocation.get("phrase")
+            if phrase:
+                review_units.append(_resolve_phrase_alternatives(str(phrase)))
+    
+    # 移除重複
+    review_units = list(set(review_units))
+    
+    # 隨機選擇
+    chosen = random.choice(review_units) if review_units else word_doc.get("word")
+    return " ".join(str(chosen or "").split())
 
 def build_selection_pools_filter(
     today: date,
@@ -229,6 +284,10 @@ def simulate_word_selection_for_today(
         maintenance_count = min(len(maintenance_pool), remaining)
         maintenance_selected = random.sample(maintenance_pool, maintenance_count) if maintenance_count > 0 else []
         result_words.extend(maintenance_selected)
+    
+    # === 為每個選中的單字添加 review_unit ===
+    for word in result_words:
+        word["review_unit"] = get_review_unit(word)
     
     return {
         "words": result_words,

@@ -19,12 +19,17 @@ type TrainingDetail = {
     max_output_tokens?: number;
   };
   selection?: {
+    algorithm?: string;
     pool_limit?: number;
     selected_limit?: number;
     pool_count?: number;
     vector_count?: number;
     selected_count?: number;
     rule?: string;
+    due?: { selected?: number; total?: number };
+    at_risk?: { selected?: number; total?: number };
+    new?: { selected?: number; total?: number };
+    maintenance?: { selected?: number; total?: number };
   };
 };
 
@@ -82,6 +87,7 @@ export default function TrainingNewResultPage() {
   const [wordDetail, setWordDetail] = useState<WordDetail | null>(null);
   const [isWordLoading, setIsWordLoading] = useState(false);
   const [wordErrorText, setWordErrorText] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [wordFeedback, setWordFeedback] = useState<Record<string, "familiar" | "unsure" | "new">>({});
 
   useEffect(() => {
@@ -191,45 +197,88 @@ export default function TrainingNewResultPage() {
   const recordFeedback = async (
     feedback: "familiar" | "unsure" | "new"
   ) => {
-    if (!selectedWordKey || !wordDetail?._id || !trainingId) {
-      console.error("Missing required fields for feedback", { selectedWordKey, wordDetailId: wordDetail?._id, trainingId });
+    if (!selectedWordKey) {
+      console.error("No selected word");
       return;
     }
 
-    try {
-      const response = await fetch(
-        `${API_BASE}/training/${trainingId}/record-feedback`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            word_id: wordDetail._id,
-            feedback: feedback,
-            training_id: trainingId,
-            review_mode: "article_context",
-          }),
-        }
-      );
+    // 只更新本地狀態，不立即保存
+    setWordFeedback((prev) => ({ ...prev, [selectedWordKey]: feedback }));
+  };
 
-      if (!response.ok) {
-        const maybeJson = await response.json().catch(() => null);
-        const errMsg =
-          maybeJson && typeof maybeJson.detail === "string"
-            ? maybeJson.detail
-            : "記錄反饋失敗";
-        throw new Error(errMsg);
+  const saveAllFeedback = async () => {
+    if (!trainingId || Object.keys(wordFeedback).length === 0) {
+      alert("沒有任何反饋需要保存");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const feedbackEntries = Object.entries(wordFeedback).map(([word, feedback]) => ({
+        word,
+        feedback,
+      }));
+
+      console.log("準備保存反饋:", feedbackEntries);
+
+      let successCount = 0;
+      const errors: string[] = [];
+
+      for (const { word, feedback } of feedbackEntries) {
+        try {
+          // 取得單字的 _id
+          const encodedWord = encodeURIComponent(word);
+          const res = await fetch(`${API_BASE}/words/by-word/${encodedWord}`);
+          if (!res.ok) {
+            errors.push(`${word}: 無法找到該單字`);
+            continue;
+          }
+
+          const wordDetail = await res.json();
+
+          const response = await fetch(
+            `${API_BASE}/training/${trainingId}/record-feedback`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                word_id: wordDetail._id,
+                feedback: feedback,
+                training_id: trainingId,
+                review_mode: "article_context",
+              }),
+            }
+          );
+
+          if (response.ok) {
+            successCount++;
+            console.log(`✓ 已保存 ${word}: ${feedback}`);
+          } else {
+            const errData = await response.json().catch(() => ({}));
+            errors.push(`${word}: ${errData.detail || "保存失敗"}`);
+          }
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : "未知錯誤";
+          errors.push(`${word}: ${msg}`);
+        }
       }
 
-      const data = await response.json();
-      console.log("反饋已記錄:", data.updated_word);
+      // 重置反饋狀態
+      if (successCount > 0) {
+        setWordFeedback({});
+      }
 
-      // 更新本地狀態
-      setWordFeedback((prev) => ({ ...prev, [selectedWordKey]: feedback }));
+      // 顯示結果
+      let message = `成功保存 ${successCount}/${feedbackEntries.length} 個反饋`;
+      if (errors.length > 0) {
+        message += `\n\n失敗: ${errors.slice(0, 3).join("\n")}${errors.length > 3 ? `\n...等${errors.length - 3}個` : ""}`;
+      }
+      alert(message);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "記錄反饋失敗";
-      console.error("Error recording feedback:", message);
-      // 仍然更新本地狀態以提供即時回饋
-      setWordFeedback((prev) => ({ ...prev, [selectedWordKey]: feedback }));
+      console.error("Error saving feedback:", error);
+      alert("保存反饋時出錯");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -279,10 +328,25 @@ export default function TrainingNewResultPage() {
               <div>Training ID: {detail.training_id}</div>
               <div>日期: {detail.date}</div>
               <div>模型: {detail.training_ai?.model || "-"}</div>
-              <div>
-                實際候選/有向量/入選: {detail.selection?.pool_count ?? 0}/{detail.selection?.vector_count ?? 0}/
-                {detail.selection?.selected_count ?? detail.words.length}
-              </div>
+              {detail.selection?.algorithm === "spaced_repetition_pools" ? (
+                <>
+                  <div>
+                    實際候選/入選: {detail.selection?.pool_count ?? 0}/
+                    {detail.selection?.selected_count ?? detail.words.length}
+                  </div>
+                  <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Due {detail.selection?.due?.selected ?? 0}/{detail.selection?.due?.total ?? 0} ・
+                    At-risk {detail.selection?.at_risk?.selected ?? 0}/{detail.selection?.at_risk?.total ?? 0} ・
+                    New {detail.selection?.new?.selected ?? 0}/{detail.selection?.new?.total ?? 0} ・
+                    Maintenance {detail.selection?.maintenance?.selected ?? 0}/{detail.selection?.maintenance?.total ?? 0}
+                  </div>
+                </>
+              ) : (
+                <div>
+                  實際候選/有向量/入選: {detail.selection?.pool_count ?? 0}/{detail.selection?.vector_count ?? 0}/
+                  {detail.selection?.selected_count ?? detail.words.length}
+                </div>
+              )}
               <div>已儲存到資料庫 collection: training</div>
             </div>
 
@@ -296,23 +360,58 @@ export default function TrainingNewResultPage() {
             </article>
 
             <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900/40">
-              <h2 className="mb-2 text-lg font-semibold">本次練習單字</h2>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold">本次練習單字</h2>
+                <button
+                  type="button"
+                  onClick={() => void saveAllFeedback()}
+                  disabled={Object.keys(wordFeedback).length === 0 || isSaving}
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                    Object.keys(wordFeedback).length === 0 || isSaving
+                      ? "border border-zinc-300 bg-zinc-100 text-zinc-400 cursor-not-allowed dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500"
+                      : "border-0 bg-emerald-600 text-white hover:bg-emerald-500 dark:bg-emerald-700 dark:hover:bg-emerald-600"
+                  }`}
+                >
+                  {isSaving ? "⏳ 保存中..." : `💾 保存反饋（${Object.keys(wordFeedback).length}個）`}
+                </button>
+              </div>
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                 <div className="space-y-2">
                   {detail.words.map((word, index) => {
                     const isSelected = selectedWord?.toLowerCase() === word.toLowerCase();
+                    const wordFeedbackStatus = wordFeedback[word.toLowerCase()];
+                    
+                    let baseClass = "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left transition ";
+                    
+                    if (isSelected) {
+                      baseClass += "border-emerald-500 bg-emerald-50 text-emerald-900 dark:border-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-100";
+                    } else if (wordFeedbackStatus === "familiar") {
+                      baseClass += "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-100";
+                    } else if (wordFeedbackStatus === "unsure") {
+                      baseClass += "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-100";
+                    } else if (wordFeedbackStatus === "new") {
+                      baseClass += "border-rose-300 bg-rose-50 text-rose-900 dark:border-rose-700 dark:bg-rose-900/20 dark:text-rose-100";
+                    } else {
+                      baseClass += "border-zinc-200 bg-zinc-50 text-zinc-800 hover:border-emerald-300 hover:bg-emerald-50/50 dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-100 dark:hover:border-emerald-800";
+                    }
+                    
+                    const feedbackEmoji: Record<string, string> = {
+                      familiar: "😎",
+                      unsure: "🤔",
+                      new: "🫠",
+                    };
+                    
                     return (
                       <button
                         key={word}
                         type="button"
                         onClick={() => void loadWordDetail(word)}
-                        className={`flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left transition ${
-                          isSelected
-                            ? "border-emerald-500 bg-emerald-50 text-emerald-900 dark:border-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-100"
-                            : "border-zinc-200 bg-zinc-50 text-zinc-800 hover:border-emerald-300 hover:bg-emerald-50/50 dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-100 dark:hover:border-emerald-800"
-                        }`}
+                        className={baseClass}
                       >
-                        <span className="text-sm font-semibold">{index + 1}. {word}</span>
+                        <span className="text-sm font-semibold">
+                          {index + 1}. {word}
+                          {wordFeedbackStatus && <span className="ml-2">{feedbackEmoji[wordFeedbackStatus]}</span>}
+                        </span>
                         <span className="text-xs font-medium">{isSelected ? "收合單字卡" : "打開單字卡"}</span>
                       </button>
                     );
