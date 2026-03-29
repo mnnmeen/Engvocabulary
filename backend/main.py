@@ -12,6 +12,9 @@ from pydantic import BaseModel
 
 from db import get_database
 from openrouter_cli import call_openrouter
+from spaced_repetition import update_word_after_review, UserFeedback
+from word_selection import simulate_word_selection_for_today
+from datetime import date
 
 app = FastAPI(title="ENGVOCAB Backend")
 
@@ -37,6 +40,13 @@ class TrainingGenerateRequest(BaseModel):
     model: str = "openrouter/auto"
     temperature: float = 0.7
     max_output_tokens: int = 900
+
+
+class RecordFeedbackRequest(BaseModel):
+    word_id: str
+    feedback: str  # "familiar" | "unsure" | "new"
+    training_id: str | None = None
+    review_mode: str = "article_context"
 
 
 def _build_training_system_instruction() -> str:
@@ -378,34 +388,53 @@ async def generate_training_article(payload: TrainingGenerateRequest):
 
     pool_limit = 50
     selected_limit = 25
-    cursor = (
-        words_collection.find(
-            {"priority_group": "high"},
-            {
-                "word": 1,
-                "priority_rank": 1,
-                "priority_score": 1,
-                "sense_pos_vectors": 1,
-            },
-        )
-        .sort(
-            [
-                ("priority_rank", 1),
-                ("priority_score", -1),
-                ("word", 1),
-            ]
-        )
-        .limit(pool_limit)
-    )
-    candidate_docs = await cursor.to_list(length=pool_limit)
+    selection_meta = {}
 
-    selected_words, selection_meta = _select_training_words(
-        docs=candidate_docs,
-        selected_limit=selected_limit,
-    )
+    # 使用新的 spaced repetition 選字邏輯
+    try:
+        all_words = await words_collection.find({}).to_list(None)
+        selection_result = simulate_word_selection_for_today(
+            all_words=all_words,
+            today=date.today(),
+            new_word_limit=8,
+            total_limit=25,
+        )
+        selected_words = [w.get("word") for w in selection_result.get("words", [])]
+        selection_meta = {
+            "algorithm": "spaced_repetition_pools",
+            **selection_result.get("pools", {}),
+        }
+    except Exception as e:
+        # Fallback 到舊邏輯
+        print(f"Spaced repetition selection failed: {e}, falling back to priority-based")
+        cursor = (
+            words_collection.find(
+                {"priority_group": "high"},
+                {
+                    "word": 1,
+                    "priority_rank": 1,
+                    "priority_score": 1,
+                    "sense_pos_vectors": 1,
+                },
+            )
+            .sort(
+                [
+                    ("priority_rank", 1),
+                    ("priority_score", -1),
+                    ("word", 1),
+                ]
+            )
+            .limit(pool_limit)
+        )
+        candidate_docs = await cursor.to_list(length=pool_limit)
+        selected_words, selection_meta = _select_training_words(
+            docs=candidate_docs,
+            selected_limit=selected_limit,
+        )
+        selection_meta["algorithm"] = "priority_based_fallback"
 
     if not selected_words:
-        raise HTTPException(status_code=400, detail="No eligible high-priority words found")
+        raise HTTPException(status_code=400, detail="No eligible words found for training")
 
     api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
@@ -535,3 +564,131 @@ async def get_training_detail(training_id: str):
         "training_ai": doc.get("training_ai"),
         "selection": doc.get("selection"),
     }
+
+
+@app.post("/training/{training_id}/record-feedback")
+async def record_word_feedback(
+    training_id: str,
+    payload: RecordFeedbackRequest,
+):
+    """
+    記錄使用者對單字的反饋，並更新 Vocabulary 和 ReviewLog。
+    """
+    db = get_database()
+    words_collection = db["words"]
+    review_log_collection = db["review_log"]
+    training_collection = db["training"]
+
+    try:
+        word_id = ObjectId(payload.word_id)
+        training_oid = ObjectId(training_id)
+    except (InvalidId, TypeError) as exc:
+        raise HTTPException(status_code=400, detail="invalid id format") from exc
+
+    # 取得單字和訓練記錄
+    word_doc = await words_collection.find_one({"_id": word_id})
+    if not word_doc:
+        raise HTTPException(status_code=404, detail="Word not found")
+
+    training_doc = await training_collection.find_one({"_id": training_oid})
+    if not training_doc:
+        raise HTTPException(status_code=404, detail="Training not found")
+
+    # 驗證 feedback 值
+    try:
+        feedback = UserFeedback(payload.feedback)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid feedback value. Must be 'familiar', 'unsure', or 'new'")
+
+    # 更新 Vocabulary
+    review_now = datetime.utcnow()
+    updated_word = update_word_after_review(word_doc, feedback, review_now)
+
+    # 寫入資料庫
+    await words_collection.replace_one({"_id": word_id}, updated_word)
+
+    # 記錄到 ReviewLog
+    review_log_entry = {
+        "training_id": training_oid,
+        "word_id": word_id,
+        "word": word_doc.get("word"),
+        "review_date": review_now.isoformat(),
+        "review_mode": payload.review_mode,
+        "user_feedback": feedback.value,
+        "quality_score": {
+            "familiar": 5.0,
+            "unsure": 2.5,
+            "new": 0.0,
+        }[feedback.value],
+        "interval_before": word_doc.get("current_interval", 1),
+        "interval_after": updated_word.get("current_interval", 1),
+        "stability_before": word_doc.get("stability", 1.0),
+        "stability_after": updated_word.get("stability", 1.0),
+        "difficulty_change": updated_word.get("difficulty", 0.5) - word_doc.get("difficulty", 0.5),
+        "is_first_review": word_doc.get("review_count", 0) == 0,
+        "success_streak_before": word_doc.get("success_streak", 0),
+        "success_streak_after": updated_word.get("success_streak", 0),
+        "lapse_count_before": word_doc.get("lapse_count", 0),
+        "lapse_count_after": updated_word.get("lapse_count", 0),
+        "context": {
+            "training_model": training_doc.get("training_ai", {}).get("model"),
+            "training_ai_provider": training_doc.get("training_ai", {}).get("provider"),
+            "article_preview": training_doc.get("article", "")[:100],
+        },
+        "metadata": {
+            "algorithm_version": 1,
+            "review_session_id": training_oid,
+        }
+    }
+
+    await review_log_collection.insert_one(review_log_entry)
+
+    return {
+        "success": True,
+        "word_id": str(word_id),
+        "updated_word": {
+            "word": updated_word.get("word"),
+            "acquisition_state": updated_word.get("acquisition_state"),
+            "next_review_date": updated_word.get("next_review_date"),
+            "current_interval": updated_word.get("current_interval"),
+            "success_streak": updated_word.get("success_streak"),
+            "review_count": updated_word.get("review_count"),
+            "stability": round(updated_word.get("stability", 1.0), 2),
+            "difficulty": round(updated_word.get("difficulty", 0.5), 2),
+        }
+    }
+
+
+@app.get("/training/today/pick-words")
+async def get_todays_training_words(
+    new_word_limit: int = 5,
+    total_limit: int = 30,
+):
+    """
+    獲取今天應該練習的單字。
+    使用 4 個 Pool 的選字邏輯：
+    - Due: 到期複習 (40%)
+    - At-risk: 高風險遺忘 (25%)
+    - New: 新字 (25%)
+    - Maintenance: 維持 (10%)
+    """
+    db = get_database()
+    words_collection = db["words"]
+
+    # 從資料庫取出所有符合條件的單字
+    all_words = await words_collection.find({}).to_list(None)
+
+    # 運用選字邏輯
+    result = simulate_word_selection_for_today(
+        all_words=all_words,
+        today=date.today(),
+        new_word_limit=new_word_limit,
+        total_limit=total_limit,
+    )
+
+    # 規範化返回值
+    for word in result.get("words", []):
+        if isinstance(word.get("_id"), ObjectId):
+            word["_id"] = str(word["_id"])
+
+    return result

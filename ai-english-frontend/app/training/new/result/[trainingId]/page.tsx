@@ -188,6 +188,51 @@ export default function TrainingNewResultPage() {
     }
   };
 
+  const recordFeedback = async (
+    feedback: "familiar" | "unsure" | "new"
+  ) => {
+    if (!selectedWordKey || !wordDetail?._id || !trainingId) {
+      console.error("Missing required fields for feedback", { selectedWordKey, wordDetailId: wordDetail?._id, trainingId });
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${API_BASE}/training/${trainingId}/record-feedback`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            word_id: wordDetail._id,
+            feedback: feedback,
+            training_id: trainingId,
+            review_mode: "article_context",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const maybeJson = await response.json().catch(() => null);
+        const errMsg =
+          maybeJson && typeof maybeJson.detail === "string"
+            ? maybeJson.detail
+            : "記錄反饋失敗";
+        throw new Error(errMsg);
+      }
+
+      const data = await response.json();
+      console.log("反饋已記錄:", data.updated_word);
+
+      // 更新本地狀態
+      setWordFeedback((prev) => ({ ...prev, [selectedWordKey]: feedback }));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "記錄反饋失敗";
+      console.error("Error recording feedback:", message);
+      // 仍然更新本地狀態以提供即時回饋
+      setWordFeedback((prev) => ({ ...prev, [selectedWordKey]: feedback }));
+    }
+  };
+
   const selectedWordKey = selectedWord?.toLowerCase() ?? "";
   const selectedFeedback = selectedWordKey ? wordFeedback[selectedWordKey] : undefined;
 
@@ -304,8 +349,7 @@ export default function TrainingNewResultPage() {
                           <button
                             type="button"
                             onClick={() => {
-                              if (!selectedWordKey) return;
-                              setWordFeedback((prev) => ({ ...prev, [selectedWordKey]: "familiar" }));
+                              recordFeedback("familiar");
                             }}
                             className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
                               selectedFeedback === "familiar"
@@ -318,8 +362,7 @@ export default function TrainingNewResultPage() {
                           <button
                             type="button"
                             onClick={() => {
-                              if (!selectedWordKey) return;
-                              setWordFeedback((prev) => ({ ...prev, [selectedWordKey]: "unsure" }));
+                              recordFeedback("unsure");
                             }}
                             className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
                               selectedFeedback === "unsure"
@@ -332,8 +375,7 @@ export default function TrainingNewResultPage() {
                           <button
                             type="button"
                             onClick={() => {
-                              if (!selectedWordKey) return;
-                              setWordFeedback((prev) => ({ ...prev, [selectedWordKey]: "new" }));
+                              recordFeedback("new");
                             }}
                             className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
                               selectedFeedback === "new"
