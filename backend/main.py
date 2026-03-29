@@ -3,12 +3,13 @@ import os
 import re
 from datetime import datetime
 from typing import Any
+from uuid import uuid4
 
 from bson import ObjectId
 from bson.errors import InvalidId
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from db import get_database
 from openrouter_cli import call_openrouter
@@ -47,6 +48,26 @@ class RecordFeedbackRequest(BaseModel):
     feedback: str  # "familiar" | "unsure" | "new"
     training_id: str | None = None
     review_mode: str = "article_context"
+
+
+class CreateCollocationRequest(BaseModel):
+    phrase: str
+    phrase_example: str | None = ""
+    phrase_chinese: str | None = ""
+
+
+class CreateSenseRequest(BaseModel):
+    pos: str
+    chinese: str | None = ""
+    examples: list[str] = Field(default_factory=list)
+    collocations: list[CreateCollocationRequest] = Field(default_factory=list)
+
+
+class CreateWordRequest(BaseModel):
+    word: str
+    importance: int
+    proficiency: int
+    senses: list[CreateSenseRequest]
 
 
 def _build_training_system_instruction() -> str:
@@ -273,6 +294,123 @@ async def get_word(word_id: str):
     # 將 Mongo 特有型別轉成可 JSON 化（這裡先簡化處理）
     doc["_id"] = str(doc.get("_id"))
     return doc
+
+
+@app.post("/words")
+async def create_word(payload: CreateWordRequest):
+    db = get_database()
+    collection = db["words"]
+
+    word = _normalize_word(payload.word)
+    if not word:
+        raise HTTPException(status_code=400, detail="word is required")
+
+    if payload.importance < 1 or payload.importance > 5:
+        raise HTTPException(status_code=400, detail="importance must be between 1 and 5")
+
+    if payload.proficiency < 1 or payload.proficiency > 5:
+        raise HTTPException(status_code=400, detail="proficiency must be between 1 and 5")
+
+    if not payload.senses:
+        raise HTTPException(status_code=400, detail="at least one sense is required")
+
+    escaped = re.escape(word)
+    existing = await collection.find_one({"word": {"$regex": f"^{escaped}$", "$options": "i"}})
+    if existing is not None:
+        raise HTTPException(status_code=409, detail="Word already exists")
+
+    normalized_senses: list[dict[str, Any]] = []
+    for sense in payload.senses:
+        pos = _normalize_word(sense.pos)
+        if not pos:
+            raise HTTPException(status_code=400, detail="sense.pos is required")
+
+        examples = [
+            _normalize_word(example)
+            for example in sense.examples
+            if _normalize_word(example)
+        ]
+
+        collocations: list[dict[str, str]] = []
+        for collocation in sense.collocations:
+            phrase = _normalize_word(collocation.phrase)
+            if not phrase:
+                continue
+            collocations.append(
+                {
+                    "phrase": phrase,
+                    "phrase_example": _normalize_word(collocation.phrase_example or ""),
+                    "phrase_chinese": _normalize_word(collocation.phrase_chinese or ""),
+                }
+            )
+
+        normalized_senses.append(
+            {
+                "pos": pos,
+                "chinese": _normalize_word(sense.chinese or ""),
+                "examples": examples,
+                "collocations": collocations,
+            }
+        )
+
+    if payload.importance >= 4:
+        priority_group = "high"
+    elif payload.importance >= 3:
+        priority_group = "medium"
+    else:
+        priority_group = "low"
+
+    now = datetime.utcnow()
+    now_iso = now.isoformat()
+    priority_score = float(payload.importance * 20 + payload.proficiency * 10)
+
+    document = {
+        "id": str(uuid4()),
+        "word": word,
+        "lemma": word.lower(),
+        "source": "manual",
+        "created_date": now.date().isoformat(),
+        "proficiency": payload.proficiency,
+        "importance": payload.importance,
+        "memorize": "",
+        "senses": normalized_senses,
+        "sense_pos_vectors": {},
+        "sense_pos_vector_dim": 0,
+        "sense_pos_vector_model": "",
+        "sense_pos_vector_updated_at": now_iso,
+        "priority_group": priority_group,
+        "priority_rank": 999999,
+        "priority_score": priority_score,
+        "priority_updated_at": now_iso,
+        # spaced repetition defaults
+        "acquisition_state": "new",
+        "stability": 1.0,
+        "difficulty": 0.5,
+        "retrievability": 1.0,
+        "last_review_timestamp": None,
+        "next_review_date": now.date().isoformat(),
+        "review_count": 0,
+        "success_streak": 0,
+        "lapse_count": 0,
+        "last_result": None,
+        "difficulty_history": [],
+        "review_interval_history": [],
+        "first_review_date": None,
+        "current_interval": 1,
+        "metadata": {
+            "ease_factor": 1.85,
+            "algorithm_version": 1,
+            "last_updated_at": now_iso,
+        },
+    }
+
+    result = await collection.insert_one(document)
+
+    return {
+        "success": True,
+        "word_id": str(result.inserted_id),
+        "word": word,
+    }
 
 
 @app.get("/words")

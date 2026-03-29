@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import { Anchor, Box, Burger, Container, Group, Text } from '@mantine/core';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useDisclosure } from '@mantine/hooks';
 import Image from 'next/image';
 import classes from './DoubleHeader.module.css';
@@ -12,13 +12,23 @@ const mainLinks = [
   { link: '/', label: '首頁' },
   { link: '/all-words', label: '所有單字' },
   { link: '/training', label: '訓練' },
-  { link: '#', label: '歷史' },
+  { link: '/add-word', label: '新增單字' },
   { link: '#', label: '個人帳號' },
 ];
 
 export function DoubleHeader() {
   const [opened, { toggle }] = useDisclosure(false);
-  const [active, setActive] = useState(0);
+  const pathname = usePathname();
+
+  const isActiveLink = (link: string) => {
+    if (link === '#') {
+      return false;
+    }
+    if (link === '/') {
+      return pathname === '/';
+    }
+    return pathname === link || pathname.startsWith(`${link}/`);
+  };
 
   const mainItems = mainLinks.map((item, index) => (
     <Anchor
@@ -26,8 +36,7 @@ export function DoubleHeader() {
       href={item.link}
       key={item.label}
       className={classes.mainLink}
-      data-active={index === active || undefined}
-      onClick={() => setActive(index)}
+      data-active={isActiveLink(item.link) || undefined}
     >
       {item.label}
     </Anchor>
