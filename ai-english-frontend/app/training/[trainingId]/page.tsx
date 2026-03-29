@@ -247,39 +247,41 @@ export default function TrainingDetailPage() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-zinc-200/70 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/70">
-              <div className="mb-3 text-sm font-semibold">練習單字（可點擊查看單字卡）</div>
-              <div className="flex flex-wrap gap-2">
-                {(detail.words || []).map((word) => (
-                  <button
-                    type="button"
-                    onClick={() => void loadWordDetail(word)}
-                    key={word}
-                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
-                      selectedWord?.toLowerCase() === word.toLowerCase()
-                        ? "border-emerald-600 bg-emerald-600 text-white"
-                        : "border-emerald-200 bg-emerald-50 text-emerald-800 hover:border-emerald-400 dark:border-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200"
-                    }`}
-                  >
-                    {word}
-                  </button>
-                ))}
-              </div>
-            </section>
-
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
-              <article className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-6 leading-8 text-zinc-800 shadow-sm dark:border-emerald-900/80 dark:bg-emerald-950/30 dark:text-zinc-100">
-                <div className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700/80 dark:text-emerald-300/80">
-                  點擊粗體練習單字可在右側看單字卡
-                </div>
-                {articleLines.map((line, index) => (
-                  <p key={`line-${index}`} className="mb-3 last:mb-0">
-                    {line.trim().length > 0
-                      ? renderBoldMarkdownLine(line, (word) => void loadWordDetail(word), selectedWord)
-                      : <>&nbsp;</>}
-                  </p>
-                ))}
-              </article>
+              <div className="space-y-6">
+                <article className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-6 leading-8 text-zinc-800 shadow-sm dark:border-emerald-900/80 dark:bg-emerald-950/30 dark:text-zinc-100">
+                  <div className="mb-4 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700/80 dark:text-emerald-300/80">
+                    點擊粗體練習單字可在右側看單字卡
+                  </div>
+                  {articleLines.map((line, index) => (
+                    <p key={`line-${index}`} className="mb-3 last:mb-0">
+                      {line.trim().length > 0
+                        ? renderBoldMarkdownLine(line, (word) => void loadWordDetail(word), selectedWord)
+                        : <>&nbsp;</>}
+                    </p>
+                  ))}
+                </article>
+
+                <section className="rounded-2xl border border-zinc-200/70 bg-white/90 p-5 shadow-sm backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/70">
+                  <div className="mb-3 text-sm font-semibold">練習單字（可點擊查看單字卡）</div>
+                  <div className="flex flex-wrap gap-2">
+                    {(detail.words || []).map((word) => (
+                      <button
+                        type="button"
+                        onClick={() => void loadWordDetail(word)}
+                        key={word}
+                        className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                          selectedWord?.toLowerCase() === word.toLowerCase()
+                            ? "border-emerald-600 bg-emerald-600 text-white"
+                            : "border-emerald-200 bg-emerald-50 text-emerald-800 hover:border-emerald-400 dark:border-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200"
+                        }`}
+                      >
+                        {word}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              </div>
 
               <aside className="lg:sticky lg:top-6 lg:self-start">
                 <div className="rounded-2xl border border-zinc-200/80 bg-white/90 p-4 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/80">

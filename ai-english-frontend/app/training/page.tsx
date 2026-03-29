@@ -105,9 +105,9 @@ export default function TrainingPage() {
               href="/training/new"
               className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:ring-offset-zinc-900"
             >
-              💪開始新增訓練
+              💪開始新增訓練（自動生成）
             </Link>
-            <span className="text-sm text-zinc-600 dark:text-zinc-300">跳轉到選字與生成頁面</span>
+            <span className="text-sm text-zinc-600 dark:text-zinc-300">點一下就會自動選字、生成文章，完成後直接跳結果頁</span>
           </div>
         </section>
 
