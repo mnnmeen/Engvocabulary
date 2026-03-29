@@ -4,6 +4,8 @@ import re
 from datetime import datetime
 from typing import Any
 
+from bson import ObjectId
+from bson.errors import InvalidId
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -440,4 +442,78 @@ async def generate_training_article(payload: TrainingGenerateRequest):
     return {
         "training_id": str(result.inserted_id),
         **response_document,
+    }
+
+
+@app.get("/training")
+async def list_training_history(page: int = 1, limit: int = 20):
+    if page < 1:
+        raise HTTPException(status_code=400, detail="page must be >= 1")
+    if limit < 1 or limit > 100:
+        raise HTTPException(status_code=400, detail="limit must be between 1 and 100")
+
+    db = get_database()
+    collection = db["training"]
+
+    total = await collection.count_documents({})
+    total_pages = max(1, math.ceil(total / limit))
+    if page > total_pages and total > 0:
+        raise HTTPException(status_code=404, detail="page out of range")
+
+    skip = (page - 1) * limit
+    cursor = collection.find({}).sort([("created_at", -1), ("_id", -1)]).skip(skip).limit(limit)
+    docs = await cursor.to_list(length=limit)
+
+    items = []
+    for doc in docs:
+        words = doc.get("words") if isinstance(doc.get("words"), list) else []
+        words = [str(word) for word in words if str(word).strip()]
+        items.append(
+            {
+                "training_id": str(doc.get("_id")),
+                "created_at": str(doc.get("created_at", "")),
+                "date": str(doc.get("date", "")),
+                "words": words,
+                "words_count": len(words),
+                "article_preview": str(doc.get("article", ""))[:180],
+                "training_ai": doc.get("training_ai"),
+                "selection": doc.get("selection"),
+            }
+        )
+
+    return {
+        "items": items,
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "total_pages": total_pages,
+    }
+
+
+@app.get("/training/{training_id}")
+async def get_training_detail(training_id: str):
+    db = get_database()
+    collection = db["training"]
+
+    try:
+        object_id = ObjectId(training_id)
+    except (InvalidId, TypeError) as exc:
+        raise HTTPException(status_code=400, detail="invalid training_id") from exc
+
+    doc = await collection.find_one({"_id": object_id})
+    if doc is None:
+        raise HTTPException(status_code=404, detail="Training not found")
+
+    words = doc.get("words") if isinstance(doc.get("words"), list) else []
+    words = [str(word) for word in words if str(word).strip()]
+
+    return {
+        "training_id": str(doc.get("_id")),
+        "created_at": str(doc.get("created_at", "")),
+        "date": str(doc.get("date", "")),
+        "words": words,
+        "article": str(doc.get("article", "")),
+        "article_bolded": str(doc.get("article_bolded", "")),
+        "training_ai": doc.get("training_ai"),
+        "selection": doc.get("selection"),
     }
