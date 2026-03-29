@@ -133,11 +133,7 @@ export default function TrainingPage() {
                   href={`/training/${item.training_id}`}
                   className="block rounded-xl border border-zinc-200 bg-white p-4 transition hover:border-emerald-300 hover:bg-emerald-50/40 dark:border-zinc-700 dark:bg-zinc-900/40 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/20"
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{item.date || "未標註日期"}</div>
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400">{item.training_ai?.model || "model: -"}</div>
-                  </div>
-                  <div className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">訓練 ID：{item.training_id}</div>
+                  <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{item.date || "未標註日期"}</div>
                   <div className="mt-2 line-clamp-2 text-sm text-zinc-700 dark:text-zinc-200">{item.article_preview || "（無文章內容）"}</div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {(item.words || []).slice(0, 6).map((word) => (

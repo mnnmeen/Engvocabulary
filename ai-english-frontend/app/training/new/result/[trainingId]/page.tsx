@@ -324,32 +324,6 @@ export default function TrainingNewResultPage() {
           </section>
         ) : (
           <div className="space-y-4">
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-200">
-              <div>Training ID: {detail.training_id}</div>
-              <div>日期: {detail.date}</div>
-              <div>模型: {detail.training_ai?.model || "-"}</div>
-              {detail.selection?.algorithm === "spaced_repetition_pools" ? (
-                <>
-                  <div>
-                    實際候選/入選: {detail.selection?.pool_count ?? 0}/
-                    {detail.selection?.selected_count ?? detail.words.length}
-                  </div>
-                  <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                    Due {detail.selection?.due?.selected ?? 0}/{detail.selection?.due?.total ?? 0} ・
-                    At-risk {detail.selection?.at_risk?.selected ?? 0}/{detail.selection?.at_risk?.total ?? 0} ・
-                    New {detail.selection?.new?.selected ?? 0}/{detail.selection?.new?.total ?? 0} ・
-                    Maintenance {detail.selection?.maintenance?.selected ?? 0}/{detail.selection?.maintenance?.total ?? 0}
-                  </div>
-                </>
-              ) : (
-                <div>
-                  實際候選/有向量/入選: {detail.selection?.pool_count ?? 0}/{detail.selection?.vector_count ?? 0}/
-                  {detail.selection?.selected_count ?? detail.words.length}
-                </div>
-              )}
-              <div>已儲存到資料庫 collection: training</div>
-            </div>
-
             <article className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-5 leading-8 text-zinc-800 dark:border-emerald-900/80 dark:bg-emerald-950/30 dark:text-zinc-100">
               <h2 className="mb-3 text-lg font-semibold">AI 文章</h2>
               {articleLines.map((line, index) => (

@@ -236,17 +236,6 @@ export default function TrainingDetailPage() {
           </section>
         ) : (
           <>
-            <section className="rounded-2xl border border-zinc-200/70 bg-white/85 p-5 text-sm shadow-sm backdrop-blur dark:border-zinc-800/80 dark:bg-zinc-900/70">
-              <div className="grid grid-cols-1 gap-2 text-zinc-700 dark:text-zinc-200 sm:grid-cols-2">
-                <div>Training ID: {detail.training_id}</div>
-                <div>日期: {detail.date || "-"}</div>
-                <div>模型: {detail.training_ai?.model || "-"}</div>
-                <div>
-                  入選單字: {detail.selection?.selected_count ?? detail.words?.length ?? 0}
-                </div>
-              </div>
-            </section>
-
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
               <div className="space-y-6">
                 <article className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-6 leading-8 text-zinc-800 shadow-sm dark:border-emerald-900/80 dark:bg-emerald-950/30 dark:text-zinc-100">
