@@ -29,8 +29,36 @@ async function getDashboardStats() {
   }
 }
 
+async function getTodayTrainingStatus() {
+  try {
+    const res = await fetch(`${API_BASE}/training?page=1&limit=1`, {
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      return { hasTrainingToday: false };
+    }
+
+    const data = (await res.json()) as {
+      items?: Array<{ date?: string }>;
+    };
+
+    // 取得今天的日期 (YYYY-MM-DD 格式)
+    const today = new Date().toISOString().split("T")[0];
+
+    // 檢查是否有今天的訓練記錄
+    const hasTrainingToday =
+      data.items && data.items.length > 0 && data.items[0].date === today;
+
+    return { hasTrainingToday };
+  } catch {
+    return { hasTrainingToday: false };
+  }
+}
+
 export default async function Home() {
   const { wordCount, collocationsCount } = await getDashboardStats();
+  const { hasTrainingToday } = await getTodayTrainingStatus();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-slate-50 to-emerald-50 px-6 py-12 text-zinc-900 dark:from-zinc-950 dark:via-zinc-900 dark:to-emerald-950 dark:text-zinc-50">
@@ -45,6 +73,31 @@ export default async function Home() {
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
             以方格卡片整理單字進度與新增入口。
           </p>
+        </div>
+
+        {/* 訓練狀態提示 */}
+        <div
+          className={`mb-8 rounded-2xl p-6 ${
+            hasTrainingToday
+              ? "border border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/80 dark:bg-emerald-950/60 dark:text-emerald-100"
+              : "border border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/80 dark:bg-amber-950/60 dark:text-amber-100"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">{hasTrainingToday ? "✅" : "📚"}</span>
+            <div>
+              <p className="font-semibold">
+                {hasTrainingToday
+                  ? "今天已經有複習過了！"
+                  : "今天還沒進行單字複習哦！"}
+              </p>
+              <p className="mt-1 text-sm opacity-80">
+                {hasTrainingToday
+                  ? "繼續保持習慣，明天再來挑戰吧！"
+                  : "現在就開始訓練，讓你的英文更進步。"}
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-3">
